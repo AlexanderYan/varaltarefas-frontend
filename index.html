@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varal de Tarefas - Online</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .status-pendente {
+            color: #dc3545;
+        }
+        .status-andamento {
+            color: #ffc107;
+        }
+        .status-concluida {
+            color: #28a745;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xxxxxxxxxxxx.supabase.co'; // Substitua pelo URL do seu projeto
+        const supabaseKey = 'sua-chave-publica'; // Substitua pela chave pública do Supabase
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Função para carregar tarefas
+        async function loadTasks() {
+            const { data: tasks, error } = await supabase.from('tasks').select('*');
+            if (error) {
+                console.error('Erro ao carregar tarefas:', error);
+                return;
+            }
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${task.id}</td>
+                    <td>${task.description}</td>
+                    <td>${task.assignee}</td>
+                    <td class="status-${task.status.toLowerCase().replace(' ', '-')}">${task.status}</td>
+                    <td>
+                        <button onclick="deleteTask(${task.id})" class="delete-btn">Excluir</button>
+                    </td>
+                `;
+                taskList.appendChild(row);
+            });
+        }
+
+        // Função para adicionar tarefa
+        document.getElementById('taskForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const taskInput = document.getElementById('taskInput');
+            const assignee = document.getElementById('assignee');
+            const status = document.getElementById('status');
+
+            const { error } = await supabase.from('tasks').insert([
+                {
+                    description: taskInput.value.trim(),
+                    assignee: assignee.value,
+                    status: status.value
+                }
+            ]);
+
+            if (error) {
+                console.error('Erro ao adicionar tarefa:', error);
+            } else {
+                taskInput.value = '';
+                assignee.value = '';
+                status.value = '';
+                loadTasks();
+            }
+        });
+
+        // Função para excluir tarefa
+        async function deleteTask(taskId) {
+            const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+            if (error) {
+                console.error('Erro ao excluir tarefa:', error);
+            } else {
+                loadTasks();
+            }
+        }
+
+        // Carregar tarefas ao iniciar a página
+        loadTasks();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Varal de Tarefas - Online</h1>
+        <form id="taskForm">
+            <input type="text" id="taskInput" placeholder="Descrição da Tarefa" required>
+            <select id="assignee" required>
+                <option value="" disabled selected>Atribuir para</option>
+                <option value="Yan">Yan</option>
+                <option value="Dione">Dione</option>
+                <option value="Cleydson">Cleydson</option>
+                <option value="Nickolas">Nickolas</option>
+            </select>
+            <select id="status" required>
+                <option value="" disabled selected>Status</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Em Andamento">Em Andamento</option>
+                <option value="Concluída">Concluída</option>
+            </select>
+            <button type="submit">Adicionar Tarefa</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tarefa</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="taskList"></tbody>
+        </table>
+    </div>
+</body>
+</html>
